@@ -474,15 +474,39 @@ public class SunmiPrinterModule extends ReactContextBaseJavaModule {
     printerService.print2DCode(data, symbology, modulesize, errorlevel, innerResultCallback);
   }
 
-  /**
+/**
    * 包事务打印专用接口
    *
-   * @param tranBean
+   * @param tranBeanArray
    */
   @ReactMethod
-  public void commitPrint(TransBean[] tranBean) throws RemoteException {
-    printerService.commitPrint(tranBean, innerResultCallback);
-  }
+  public void commitPrint(ReadableArray tranBeanArray) {
+    try {
+    int size = tranBeanArray.size();
+    TransBean[] transBeans = new TransBean[size];
+
+        for (int i = 0; i < size; i++) {
+            ReadableMap map = tranBeanArray.getMap(i);
+            if (map != null) {
+                byte type = (byte) map.getInt("type");
+                String text = map.getString("text");
+                byte[] data = null;
+                if (map.hasKey("data") && map.getArray("data") != null) {
+                    ReadableArray dataArray = map.getArray("data");
+                    data = new byte[dataArray.size()];
+                    for (int j = 0; j < dataArray.size(); j++) {
+                        data[j] = (byte) dataArray.getInt(j);
+                    }
+                }
+                transBeans[i] = new TransBean(type, text, data);
+            }
+        }
+
+        printerService.commitPrint(transBeans, innerResultCallback);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    }
 
   /**
    * 进入事务模式
